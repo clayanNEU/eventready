@@ -32,11 +32,23 @@ ${referenceFlyerId ? 'Maintain the overall design aesthetic and layout of the re
     if (referenceFlyerId) {
       const referenceFlyer = data.flyers.find(f => f.id === referenceFlyerId);
       if (referenceFlyer) {
-        // Convert relative path to absolute URL
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-        referenceImageUrl = referenceFlyer.imageUrl.startsWith('http')
-          ? referenceFlyer.imageUrl
-          : `${baseUrl}${referenceFlyer.imageUrl}`;
+        const imageUrl = referenceFlyer.imageUrl;
+
+        // Check if it's a data URL (base64) - FLUX doesn't support these
+        if (imageUrl.startsWith('data:')) {
+          console.warn('Reference image is a data URL, skipping reference feature');
+          // Don't use reference - just enhance the prompt with style notes
+          if (referenceFlyer.notes) {
+            prompt += `\n\nStyle inspiration: ${referenceFlyer.notes}`;
+          }
+        } else if (imageUrl.startsWith('http')) {
+          // Already absolute URL
+          referenceImageUrl = imageUrl;
+        } else {
+          // Convert relative path to absolute URL
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+          referenceImageUrl = `${baseUrl}${imageUrl}`;
+        }
       }
     }
 
