@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
     // Build the prompt
     const colorString = brand.colors.join(', ');
-    const prompt = `Create a professional event flyer for "${eventName}".
+    let prompt = `Create a professional event flyer for "${eventName}".
 Event Details:
 - Date: ${date}
 - Time: ${time}
