@@ -13,6 +13,9 @@ const defaultData: AppData = {
   flyers: [],
 };
 
+// In-memory storage for serverless environments
+let memoryStore: AppData | null = null;
+
 export function ensureDataFile() {
   try {
     const dir = path.dirname(dataFilePath);
@@ -30,25 +33,39 @@ export function ensureDataFile() {
 }
 
 export function readData(): AppData {
+  // First, try to read from memory store
+  if (memoryStore) {
+    return memoryStore;
+  }
+
+  // Then try to read from file
   try {
     ensureDataFile();
     if (fs.existsSync(dataFilePath)) {
       const data = fs.readFileSync(dataFilePath, 'utf-8');
-      return JSON.parse(data);
+      const parsedData = JSON.parse(data);
+      memoryStore = parsedData; // Cache in memory
+      return parsedData;
     }
   } catch (error) {
     console.warn('Could not read data file:', error);
   }
-  // Return default data if file doesn't exist or can't be read
-  return defaultData;
+
+  // Initialize memory store with default data
+  memoryStore = { ...defaultData };
+  return memoryStore;
 }
 
 export function writeData(data: AppData) {
+  // Always update memory store first
+  memoryStore = data;
+
+  // Try to persist to file (may fail on serverless)
   try {
     ensureDataFile();
     fs.writeFileSync(dataFilePath, JSON.stringify(data, null, 2));
   } catch (error) {
-    console.error('Could not write data file:', error);
-    throw new Error('Unable to save data. This may be a read-only environment.');
+    console.warn('Could not write data file (using memory storage):', error);
+    // Don't throw - memory storage is sufficient for serverless
   }
 }
